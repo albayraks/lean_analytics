@@ -1,31 +1,63 @@
+# Pagination and Cursor, PART 3
+from tweepy import API
+from tweepy import Cursor
 from tweepy.streaming import StreamListener
 from tweepy import OAuthHandler
 from tweepy import Stream 
 
 import twitter_credentials
 
-class StdOutListener(StreamListener): #inherits from StreamListener class
+# # # # TWITTER AUTHENTICATOR # # # #
+class TwitterAuthenticator(): # defined this class for authentication. Making more modular
 
-	def on_data(self, data): #streaming method for tweets
-		print(data)
-		return True
-	def on_error(self, status): #streaming method for if any errors occur
+	def authenticate_twitter_app(self):
+		auth = OAuthHandler(twitter_credentials.CONSUMER_KEY, twitter_credentials.CONSUMER_SECRET)
+		auth.set_access_token(twitter_credentials.ACCESS_TOKEN, twitter_credentials.ACCESS_TOKEN_SECRET)
+		return auth
+
+
+# # # # TWITTER STREAM LISTENER # # # #
+class TwitterListener(StreamListener):
+	
+	def __init__(self, fetched_tweets_filename):
+		self.fetched_tweets_filename = fetched_tweets_filename
+
+	def on_data(self, data):
+		try:
+			print(data)
+			with open(self.fetched_tweets_filename, 'a') as tf:
+				tf.write(data)
+			return True
+		except BaseException as e:
+			print('Error on data: %s' % str(e))
+
+	def on_error(self, status):
+		if status == 420:
+			# Returning False on_data method in case of rate limit occurs.
+			return False
 		print(status)
 
+
+class TwitterStreamer():
+
+	# constructor for authentication
+	def __init__(self):
+		self.twitter_authenticator= TwitterAuthenticator()
+	
+	def stream_tweets(self, fetched_tweets_filename, hash_tag_list):
+
+		listener = TwitterListener(fetched_tweets_filename)
+		auth = self.twitter_authenticator.authenticate_twitter_app() # and making use of in method
+				
+		stream = Stream(auth, listener)
+		stream.filter(track=hash_tag_list)
+
 if __name__ == '__main__':
-	listener = StdOutListener() # creating object of our class 
-	auth = OAuthHandler(twitter_credentials.CONSUMER_KEY, twitter_credentials.CONSUMER_SECRET) # take two args for authentication
-	auth.set_access_token(twitter_credentials.ACCESS_TOKEN, twitter_credentials.ACCESS_TOKEN_SECRET) # method provided by OAuthHandlet class
 
-	# after successful authentication 
-	# we need to create the Twitter Stream
-	stream = Stream(auth, listener)
+	hash_tag_list = ['AAPL', 'GOOGL', 'AMZN', 'MSFT']
+	fetched_tweets_filename = "tweets.json"
 
-
-	# specifying which tweets taht we wanted to see
-	# otherwise it streams all tweets
-	stream.filter(track=['AAPL', 'GOOGL', 'AMZN', 'MSFT']) # method provided by Stream class. Here, streaming tweets focused on these keywords
-
-
+	twitter_streamer = TwitterStreamer()
+	twitter_streamer.stream_tweets(fetched_tweets_filename, hash_tag_list)
 
 
