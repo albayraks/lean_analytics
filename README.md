@@ -1,2 +1,2 @@
-# sentiment_analyzer
-development process of my dissertation project
+# twitter data fetch and analytics example
+A development process of my dissertation project. Nothing special yet!
