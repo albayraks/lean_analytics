@@ -1,2 +1,2 @@
 # sentiment_analyzer
-thesis project
+development process of my dissertation project
